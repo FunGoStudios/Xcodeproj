@@ -493,9 +493,8 @@ module Xcodeproj
     #
     # @example Adding QuartzCore
     #
-    #         framework = project.add_system_framework('QuartzCore', :ios)
-    #
     #         target = project.targets.first
+    #         framework = project.add_system_framework('QuartzCore', target)
     #         build_phase = target.frameworks_build_phases.first
     #         build_phase.files << framework.buildFiles.new
     #
