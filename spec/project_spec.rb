@@ -360,6 +360,21 @@ module ProjectSpecs
         @project.frameworks_group.files.size.should == before
       end
 
+      it "adds a file reference for a local framework, to the Frameworks group" do
+        target = @project.new_target(:static_library, 'Pods', :ios, '6.0')
+        framework_dir = "path/to/framework"
+        framework_name = "my_framework.framework"
+        group = @project['Frameworks']
+        file = @project.add_local_framework( File.join(framework_dir, framework_name), target )
+        file.group.should == group
+        file.name.should == framework_name
+        file.source_tree.should == "SOURCE_ROOT"
+        target.build_configurations.each do |bc|
+          bc.build_settings["FRAMEWORK_SEARCH_PATHS"].should.include?("$(inherited)")
+          bc.build_settings["FRAMEWORK_SEARCH_PATHS"].should.include?( File.join("$(SRCROOT)", framework_dir))
+        end
+      end
+
       it "creates a new target" do
         target = @project.new_target(:static_library, 'Pods', :ios, '6.0')
         target.name.should == 'Pods'

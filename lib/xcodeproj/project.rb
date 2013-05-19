@@ -539,6 +539,53 @@ module Xcodeproj
       end
     end
 
+    # Adds a file reference for a local framework to the project
+    # and add it to the framework search path
+    #
+    # The file reference can then be added to the build files of a
+    # {PBXFrameworksBuildPhase}.
+    #
+    # @param path
+    #        path to the local copy of the framework. The basename of the path will be the framework name.
+    #
+    # @param location
+    #        Each file in an Xcode project has a location.
+    #        IT can be relative to some dir or absolute. These are all the valid values:
+    #        "<group>" uses the file’s group in the project navigator to store the file’s location.
+    #        "SOURCE_ROOT" uses the project’s folder to store the file’s location.
+    #        "<absolute>" uses the file’s path on your computer to store the file’s location.
+    #        "BUILT_PRODUCTS_DIR" uses the folder where it places build products, such as executable files and libraries, to store the file’s location.
+    #        "DEVELOPER_DIR" uses the folder where you installed Xcode to store the file’s location.
+    #        "SDKROOT" uses the folder where you installed the current SDK to store the file’s location.
+
+    def add_local_framework(path, target, location = "SOURCE_ROOT")
+      framework_ref = frameworks_group.new_file(path)
+      framework_ref.name = File.basename(path)
+      framework_ref.source_tree = location
+      framework_ref.update_last_known_file_type
+      #add the framework seach path to all the configurations
+      target.build_configurations.each do |bc|
+        search_path = ""
+        if location == "SOURCE_ROOT"
+          search_path = File.join("$(SRCROOT)", File.dirname(path))
+        else
+          #TODO implement location != SOURCE_ROOT
+          puts "WARNING: search path is not implemented for location = #{location}"
+        end
+        add_framework_search_path(target, bc.name, search_path)
+        add_framework_search_path(target, bc.name, "$(inherited)")
+      end
+      framework_ref
+    end
+
+    def add_framework_search_path(target, build_configuration_name, path)
+      bc = target.build_configurations.find do |build_config|
+        build_config.name == build_configuration_name
+      end
+      bc.build_settings["FRAMEWORK_SEARCH_PATHS"] ||= []
+      bc.build_settings["FRAMEWORK_SEARCH_PATHS"] << path unless bc.build_settings["FRAMEWORK_SEARCH_PATHS"].include?(path)
+    end
+
     # Creates a new target and adds it to the project.
     #
     # The target is configured for the given platform and its file reference it
