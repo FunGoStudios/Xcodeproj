@@ -136,7 +136,28 @@ module Xcodeproj
       # @note This phase can appear only once in a target.
       #
       class PBXFrameworksBuildPhase < AbstractBuildPhase
+        # @return [PBXBuildFile] the build file generated.
+        #
+        # @param :linking
+        #         Weak      optional linking
+        #         Required  required linking
+        def link(framework_ref, linking = "Weak")
+          build_file = files.find { |bf| bf.file_ref.path == framework_ref.path }
+          build_file ||= add_file_reference(framework_ref)
+          build_file.settings ||= {}
 
+          #Cleanup or init
+          if build_file.settings["ATTRIBUTES"]
+            return build_file if build_file.settings["ATTRIBUTES"].include?(linking)
+            build_file.settings["ATTRIBUTES"].delete("Weak")
+            build_file.settings["ATTRIBUTES"].delete("Required")
+          else
+            build_file.settings["ATTRIBUTES"] = []
+          end
+
+          build_file.settings["ATTRIBUTES"] << linking
+          build_file
+        end
       end
 
       #-----------------------------------------------------------------------#

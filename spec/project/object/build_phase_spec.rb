@@ -151,4 +151,44 @@ module ProjectSpecs
       @phase.show_env_vars_in_log.should == '0'
     end
   end
+
+  describe PBXFrameworksBuildPhase do
+
+    before do
+      @phase = @project.new(PBXFrameworksBuildPhase)
+    end
+
+    it "should not link the same framework multiple times" do
+      framework_ref = @project.new_file('some/file')
+      @phase.link(framework_ref)
+      @phase.files_references.should.include framework_ref
+      before = @phase.files_references.count
+
+      framework_ref2 = @project.new_file('some/file')
+      @phase.link(framework_ref2)
+      @phase.files_references.count.should == before
+    end
+
+    it "should update the framework linking" do
+      framework_ref = @project.new_file('some/file')
+      build_file = @phase.link(framework_ref, "Weak")
+      @phase.files_references.should.include framework_ref
+      before = @phase.files_references.count
+      build_file.settings["ATTRIBUTES"].should.include "Weak"
+
+      framework_ref2 = @project.new_file('some/file')
+      build_file = @phase.link(framework_ref2, "Required")
+      @phase.files_references.count.should == before
+
+      build_file.settings["ATTRIBUTES"].should.include "Required"
+      build_file.settings["ATTRIBUTES"].should.not.include "Weak"
+
+      build_file = @phase.link(framework_ref2, "Weak")
+      @phase.files_references.count.should == before
+
+      build_file.settings["ATTRIBUTES"].should.include "Weak"
+      build_file.settings["ATTRIBUTES"].should.not.include "Required"
+    end
+
+  end
 end
