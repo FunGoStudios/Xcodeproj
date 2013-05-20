@@ -374,6 +374,17 @@ module ProjectSpecs
           bc.build_settings["FRAMEWORK_SEARCH_PATHS"].should.include?( File.join("$(SRCROOT)", framework_dir))
         end
       end
+      
+      it "does not add a file reference for a local framework if it already exists in the project" do
+        target = @project.new_target(:static_library, 'Pods', :ios, '6.0')
+        framework_dir = "path/to/framework"
+        framework_name = "my_framework.framework"
+        file = @project.add_local_framework( File.join(framework_dir, framework_name), target )
+        before = @project.frameworks_group.files.size
+        file2 = @project.add_local_framework( File.join(framework_dir, framework_name), target )
+        file.should == file
+        @project.frameworks_group.files.size.should == before
+      end
 
       it "creates a new target" do
         target = @project.new_target(:static_library, 'Pods', :ios, '6.0')

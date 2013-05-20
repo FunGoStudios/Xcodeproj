@@ -544,6 +544,9 @@ module Xcodeproj
     # The file reference can then be added to the build files of a
     # {PBXFrameworksBuildPhase}.
     #
+    # @example
+    #        project.add_system_framework('/path/to/myframework.framerk', target, :linking => "Required")
+    #
     # @param path
     #        path to the local copy of the framework. The basename of the path will be the framework name.
     #
@@ -556,25 +559,30 @@ module Xcodeproj
     #        "BUILT_PRODUCTS_DIR" uses the folder where it places build products, such as executable files and libraries, to store the file’s location.
     #        "DEVELOPER_DIR" uses the folder where you installed Xcode to store the file’s location.
     #        "SDKROOT" uses the folder where you installed the current SDK to store the file’s location.
+    #
 
     def add_local_framework(path, target, location = "SOURCE_ROOT")
-      framework_ref = frameworks_group.new_file(path)
-      framework_ref.name = File.basename(path)
-      framework_ref.source_tree = location
-      framework_ref.update_last_known_file_type
-      #add the framework seach path to all the configurations
-      target.build_configurations.each do |bc|
-        search_path = ""
-        if location == "SOURCE_ROOT"
-          search_path = File.join("$(SRCROOT)", File.dirname(path))
-        else
-          #TODO implement location != SOURCE_ROOT
-          puts "WARNING: search path is not implemented for location = #{location}"
+      if framework_ref = frameworks_group.files.find { |f| f.path == path }
+        framework_ref
+      else
+        framework_ref = frameworks_group.new_file(path)
+        framework_ref.name = File.basename(path)
+        framework_ref.source_tree = location
+        framework_ref.update_last_known_file_type
+        #add the framework seach path to all the configurations
+        target.build_configurations.each do |bc|
+          search_path = ""
+          if location == "SOURCE_ROOT"
+            search_path = File.join("$(SRCROOT)", File.dirname(path))
+          else
+            #TODO implement location != SOURCE_ROOT
+            puts "WARNING: search path is not implemented for location = #{location}"
         end
-        add_framework_search_path(target, bc.name, search_path)
-        add_framework_search_path(target, bc.name, "$(inherited)")
+          add_framework_search_path(target, bc.name, search_path)
+          add_framework_search_path(target, bc.name, "$(inherited)")
+        end
+        framework_ref
       end
-      framework_ref
     end
 
     def add_framework_search_path(target, build_configuration_name, path)
