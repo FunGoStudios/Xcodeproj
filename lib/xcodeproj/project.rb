@@ -538,6 +538,21 @@ module Xcodeproj
       end
     end
 
+    def add_system_library(name, target)
+      sdk = target.sdk
+      raise "Unable to find and SDK for the target `#{target.name}`" unless sdk
+      path =  "usr/lib/#{name}"
+      if file = frameworks_group.files.find { |f| f.path == path }
+        file
+      else
+        file = main_group.new_file(path)
+        file.name = "#{name}"
+        file.source_tree = 'SDKROOT'
+        file.update_last_known_file_type
+        file
+      end
+    end
+
     # Adds a file reference for a local framework to the project
     # and add it to the framework search path
     #

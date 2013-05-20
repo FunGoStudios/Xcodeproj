@@ -360,6 +360,28 @@ module ProjectSpecs
         @project.frameworks_group.files.size.should == before
       end
 
+      it "adds a file reference to a system library, to the projec" do
+        target = stub(:sdk => 'iphoneos5.0')
+        lib_name='libarchive.2.dylib'
+        group = @project.main_group
+        file = @project.add_system_library(lib_name, target)
+        file.group.should == group
+        file.name.should == 'libarchive.2.dylib'
+        file.path.should == "usr/lib/#{lib_name}"
+        file.source_tree.should == 'SDKROOT'
+      end
+
+      it "does not add a file reference for a system library if it is already exists in the project" do
+        target = stub(:sdk => 'iphoneos6.0')
+        lib_name='libarchive.2.dylib'
+        file_1 = @project.add_system_library(lib_name, target)
+        before = @project.frameworks_group.files.size
+
+        file_2 = @project.add_system_library(lib_name, target)
+        file_2.should == file_1
+        @project.frameworks_group.files.size.should == before
+      end
+
       it "adds a file reference for a local framework, to the Frameworks group" do
         target = @project.new_target(:static_library, 'Pods', :ios, '6.0')
         framework_dir = "path/to/framework"
